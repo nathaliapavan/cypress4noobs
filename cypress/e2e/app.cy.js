@@ -20,13 +20,49 @@ class RegisterForm {
   clickSubmit() {
     this.elements.submitBtn().click();
   }
+
+  hitEnter() {
+    cy.focused().type("{enter}");
+  }
+
+  validateSuccessFeedback(fieldSelector) {
+    cy.get(fieldSelector).should(([$input]) => {
+      const styles = window.getComputedStyle($input);
+      const border = styles.getPropertyValue("border-right-color");
+      assert.strictEqual(border, colors.success);
+    });
+  }
+
+  validateLastFigure(input) {
+    cy.get("figure")
+      .last()
+      .within(() => {
+        cy.get("img.card-img-top.card-img").should(
+          "have.attr",
+          "src",
+          input.url
+        );
+        cy.get("h4.card-title").should("have.text", input.title);
+      });
+  }
+
+  validateLocalStorageFigure(input) {
+    cy.window()
+      .its("localStorage")
+      .invoke("getItem", "tdd-ew-db")
+      .then((storedFigure) => {
+        const figure = JSON.parse(storedFigure);
+        expect(figure[0].title).to.equal(input.title);
+        expect(figure[0].imageUrl).to.equal(input.url);
+      });
+  }
 }
 
 const registerForm = new RegisterForm();
 
 const colors = {
   errors: "rgb(220, 53, 69)",
-  success: "",
+  success: "rgb(25, 135, 84)",
 };
 
 describe("Image Registration", () => {
@@ -77,6 +113,55 @@ describe("Image Registration", () => {
         const border = styles.getPropertyValue("border-right-color");
         assert.strictEqual(border, colors.errors);
       });
+    });
+  });
+
+  describe("Submitting an image with invalid inputs", () => {
+    after(() => {
+      cy.clearAllLocalStorage();
+    });
+
+    const input = {
+      title: "Alien BR",
+      url: "https://cdn.mos.cms.futurecdn.net/eM9EvWyDxXcnQTTyH8c8p5-1200-80.jpg",
+    };
+
+    it("Given I am on the image registration page", () => {
+      cy.visit("/");
+    });
+
+    it(`When I enter "${input.title}" in the title field`, () => {
+      registerForm.clickSubmit();
+      registerForm.typeTitle(input.title);
+    });
+
+    it("Then I should see a check icon in the title field", () => {
+      registerForm.validateSuccessFeedback("#title");
+    });
+
+    it(`When I enter "${input.url}" in the title field`, () => {
+      registerForm.typeUrl(input.url);
+    });
+
+    it("Then I should see a check icon in the imageUrl field", () => {
+      registerForm.validateSuccessFeedback("#imageUrl");
+    });
+
+    it("Then I can hit enter to submit the form", () => {
+      registerForm.hitEnter();
+    });
+
+    it("And the list of registered images should be updated with the new item", () => {
+      registerForm.validateLastFigure(input);
+    });
+
+    it("And the new item should be stored in the localStorage", () => {
+      registerForm.validateLocalStorageFigure(input);
+    });
+
+    it("Then The inputs should be cleared", () => {
+      registerForm.elements.titleInput().should("have.value", "");
+      registerForm.elements.imageUrlInput().should("have.value", "");
     });
   });
 });

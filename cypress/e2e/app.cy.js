@@ -180,7 +180,6 @@ describe("Image Registration", () => {
     });
 
     it(`Then I have entered "${input.title}" in the title field`, () => {
-      registerForm.clickSubmit();
       registerForm.typeTitle(input.title);
     });
 
@@ -203,6 +202,37 @@ describe("Image Registration", () => {
     it("Then The inputs should be cleared", () => {
       registerForm.elements.titleInput().should("have.value", "");
       registerForm.elements.imageUrlInput().should("have.value", "");
+    });
+  });
+
+  describe("Refreshing the page after submitting an image clicking in the submit button", () => {
+    after(() => {
+      cy.clearAllLocalStorage();
+    });
+
+    const input = {
+      title: "ALIEN BRASIL É DO BRASIL",
+      url: "https://cdn.mos.cms.futurecdn.net/eM9EvWyDxXcnQTTyH8c8p5-1200-80.jpg",
+    };
+
+    it("Given I am on the image registration page", () => {
+      cy.visit("/");
+    });
+
+    it("Then I have submitted an image by clicking the submit button", () => {
+      registerForm.typeTitle(input.title);
+      registerForm.typeUrl(input.url);
+      registerForm.clickSubmit();
+      cy.wait(100);
+    });
+
+    it("When I refresh the page", () => {
+      cy.reload();
+    });
+
+    it("Then I should still see the submitted image in the list of registered images", () => {
+      registerForm.validateLastFigure(input);
+      registerForm.validateLocalStorageFigure(input);
     });
   });
 });

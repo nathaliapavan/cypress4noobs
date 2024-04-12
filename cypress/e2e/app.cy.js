@@ -116,7 +116,7 @@ describe("Image Registration", () => {
     });
   });
 
-  describe("Submitting an image with invalid inputs", () => {
+  describe("Submitting an image with valid inputs using enter key", () => {
     after(() => {
       cy.clearAllLocalStorage();
     });
